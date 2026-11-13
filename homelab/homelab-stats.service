@@ -1,0 +1,23 @@
+[Unit]
+Description=Write aggregated homelab stats for the GitHub profile card
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/homelab-stats.sh
+# docker CLI wants a config dir; give it a throwaway one instead of /root
+RuntimeDirectory=homelab-stats
+Environment=DOCKER_CONFIG=%t/homelab-stats
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/homelab-stats
+ProtectHome=yes
+PrivateTmp=yes
+PrivateNetwork=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes

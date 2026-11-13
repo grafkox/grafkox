@@ -1,0 +1,50 @@
+name: Update profile card
+
+on:
+  schedule:
+    # 15 minutes after the homelab writes its stats (00:05, 03:05, ... UTC)
+    - cron: "20 */3 * * *"
+  push:
+    branches: [main]
+    paths:
+      - ascii.txt
+      - scripts/**
+      - .github/workflows/update.yml
+  workflow_dispatch:
+
+# Every job declares exactly the permissions it needs.
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Generate SVGs
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main   # latest main, not the triggering commit, so the push below never races
+
+      - name: Generate card
+        env:
+          GH_STATS_TOKEN: ${{ secrets.GH_STATS_TOKEN }}
+          HOMELAB_TOKEN: ${{ secrets.HOMELAB_TOKEN }}
+        run: python3 -I scripts/generate.py
+
+      - name: Commit if changed
+        run: |
+          git add dark_mode.svg light_mode.svg cache/stats.json
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update profile card"
+          git push

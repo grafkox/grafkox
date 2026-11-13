@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh homelab stats every 3 hours
+
+[Timer]
+# 15 minutes before the GitHub Action runs (20 */3 * * * UTC)
+OnCalendar=*-*-* 00/3:05:00 UTC
+OnBootSec=2min
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
