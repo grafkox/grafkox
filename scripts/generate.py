@@ -107,7 +107,7 @@ def git_stats(token: str, full_name: str, count_loc: bool) -> tuple[int, int, in
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if clone.returncode != 0:
             # Never raise CalledProcessError here: its message contains the command incl. the header.
-            raise RuntimeError(f"git clone of {full_name} failed (exit {clone.returncode})")
+            raise RuntimeError(f"git clone failed (exit {clone.returncode})")
         log = subprocess.run(
             ["git", "-C", tmp, "log", "--no-merges", "--extended-regexp", "--regexp-ignore-case",
              f"--author={AUTHOR_PATTERN}", "--numstat", "--format=tformat:@commit"],
@@ -128,22 +128,33 @@ def git_stats(token: str, full_name: str, count_loc: bool) -> tuple[int, int, in
 
 
 def github_stats(token: str) -> dict:
+    # "viewer" is the token owner; unlike user(login:) it reliably includes private repos
     data = graphql(token, """
-      query($login: String!) {
-        user(login: $login) {
+      query {
+        viewer {
+          login
           followers { totalCount }
           repositories(ownerAffiliations: OWNER, first: 100) {
-            nodes { nameWithOwner name isPrivate isFork stargazerCount isEmpty }
+            nodes { nameWithOwner name isPrivate stargazerCount isEmpty }
           }
         }
-      }""", {"login": USER})["user"]
+      }""")["viewer"]
+    if data["login"].lower() != USER.lower():
+        raise RuntimeError(f"token belongs to {data['login']}, expected {USER}")
     repos = [r for r in data["repositories"]["nodes"] if not r["isEmpty"]]
     commits = adds = dels = 0
     for repo in repos:
-        c, a, d = git_stats(token, repo["nameWithOwner"], repo["name"] not in LOC_SKIP_REPOS)
+        label = "a private repo" if repo["isPrivate"] else repo["nameWithOwner"]
+        try:
+            c, a, d = git_stats(token, repo["nameWithOwner"], repo["name"] not in LOC_SKIP_REPOS)
+        except Exception:
+            raise RuntimeError(f"reading {label} failed") from None
         commits, adds, dels = commits + c, adds + a, dels + d
+    public = sum(1 for r in repos if not r["isPrivate"])
+    print(f"Counted {public} public and {len(repos) - public} private repos: "
+          f"{commits} commits, +{adds} -{dels} lines")
     return {
-        "repos": sum(1 for r in repos if not r["isPrivate"]),
+        "repos": public,
         "stars": sum(r["stargazerCount"] for r in repos),
         "followers": data["followers"]["totalCount"],
         "commits": commits,
