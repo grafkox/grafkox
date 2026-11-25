@@ -2,16 +2,16 @@
   "github": {
     "repos": 6,
     "stars": 0,
-    "followers": 3,
+    "followers": 2,
     "commits": 83,
     "loc_add": 27249,
     "loc_del": 2605
   },
   "homelab": {
-    "updated": 1795554320,
-    "uptime_seconds": 1645221,
+    "updated": 1795586722,
+    "uptime_seconds": 1677622,
     "containers_running": 20,
-    "mem_used_bytes": 33113092848,
+    "mem_used_bytes": 33559103016,
     "mem_total_bytes": 67406520320
   }
 }
