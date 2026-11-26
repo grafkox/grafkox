@@ -8,10 +8,10 @@
     "loc_del": 2605
   },
   "homelab": {
-    "updated": 1795629902,
-    "uptime_seconds": 1720802,
+    "updated": 1795662329,
+    "uptime_seconds": 1753230,
     "containers_running": 20,
-    "mem_used_bytes": 33094824800,
+    "mem_used_bytes": 35140850904,
     "mem_total_bytes": 67406520320
   }
 }
